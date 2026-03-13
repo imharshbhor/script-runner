@@ -1,5 +1,23 @@
-const { contextBridge } = require("electron");
+const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("electronAPI", {
-  platform: process.platform
+  platform: process.platform,
+  minimize: () => ipcRenderer.send("window-minimize"),
+  maximize: () => ipcRenderer.send("window-maximize"),
+  close: () => ipcRenderer.send("window-close"),
+  selectDirectory: () => ipcRenderer.invoke("select-directory"),
+  runScript: (args) => ipcRenderer.send("run-script", args),
+  stopScript: (id) => ipcRenderer.send("stop-script", id),
+  sendScriptInput: (id, data) => ipcRenderer.send("script-input", { id, data }),
+  openExternal: (url) => ipcRenderer.send("open-external", url),
+  onLog: (callback) => {
+    const handler = (_event, value) => callback(value);
+    ipcRenderer.on("script-log", handler);
+    return () => ipcRenderer.removeListener("script-log", handler);
+  },
+  onExit: (callback) => {
+    const handler = (_event, value) => callback(value);
+    ipcRenderer.on("script-exit", handler);
+    return () => ipcRenderer.removeListener("script-exit", handler);
+  },
 });

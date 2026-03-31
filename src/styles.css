@@ -419,6 +419,8 @@ body {
 .btn-icon.play:hover { color: var(--bg-base); background-color: var(--border-focus); border-color: var(--border-focus); }
 .btn-icon.stop { color: var(--status-error); border-color: rgba(255, 51, 102, 0.3); }
 .btn-icon.stop:hover { background-color: rgba(255, 51, 102, 0.1); border-color: var(--status-error); }
+.btn-icon.btn-danger { color: var(--status-error); border-color: rgba(255, 51, 102, 0.3); }
+.btn-icon.btn-danger:hover { background-color: rgba(255, 51, 102, 0.1); }
 
 .card-footer {
   display: flex;
@@ -461,9 +463,10 @@ body {
 /* Main Workspace */
 .workspace {
   flex: 1;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 300px 1fr 250px;
   gap: 8px;
+  overflow: hidden;
 }
 
 /* Config Bay */
@@ -471,8 +474,66 @@ body {
   flex: 0 0 auto;
 }
 
+/* Log Bay */
+.log-bay {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.log-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.log-empty {
+  padding: 12px;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+.log-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.log-item:last-child {
+  border-bottom: none;
+}
+
+.log-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.log-filename {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.log-date {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+}
+
+.log-actions {
+  display: flex;
+  gap: 4px;
+}
+
 .bay-header {
-  padding: 10px 16px; /* Scaled down */
+  padding: 10px 16px;
   border-bottom: 1px solid var(--border-subtle);
   display: flex;
   justify-content: space-between;
@@ -497,6 +558,21 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
+}
+
+.bay-content.config-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  padding: 12px;
+}
+
+.bay-content.config-grid .form-group {
+  min-width: 0;
+}
+
+.bay-content.config-grid .form-group.full {
+  grid-column: 1 / -1;
 }
 
 .form-group { display: flex; flex-direction: column; gap: 6px; }

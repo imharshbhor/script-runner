@@ -1,9 +1,17 @@
 import { useState, useEffect, useRef } from "react";
 import { Icon } from "./Icons";
+import type { Script } from "../types";
 
-export function SearchPalette({ isOpen, onClose, scripts, onSelect }) {
+interface SearchPaletteProps {
+  isOpen: boolean;
+  onClose: () => void;
+  scripts: Script[];
+  onSelect: (id: string) => void;
+}
+
+export function SearchPalette({ isOpen, onClose, scripts, onSelect }: SearchPaletteProps) {
   const [query, setQuery] = useState("");
-  const inputRef = useRef(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isOpen) {

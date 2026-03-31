@@ -4,9 +4,21 @@ import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
 import "@xterm/xterm/css/xterm.css";
 
-export const TerminalBay = forwardRef(({ scriptId, initialLog, onInput, onClear }, ref) => {
-  const containerRef = useRef(null);
-  const termRef = useRef(null);
+interface TerminalBayProps {
+  scriptId: string;
+  initialLog: string;
+  onInput: (data: string) => void;
+  onClear: (id: string) => void;
+}
+
+export interface TerminalBayRef {
+  write: (data: string) => void;
+  clearAndWrite: (data: string) => void;
+}
+
+export const TerminalBay = forwardRef<TerminalBayRef, TerminalBayProps>(({ scriptId, initialLog, onInput, onClear }, ref) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const termRef = useRef<Terminal | null>(null);
 
   useImperativeHandle(ref, () => ({
     write: (data) => {
@@ -38,7 +50,7 @@ export const TerminalBay = forwardRef(({ scriptId, initialLog, onInput, onClear 
     });
     
     const fitAddon = new FitAddon();
-    const webLinksAddon = new WebLinksAddon((event, uri) => {
+    const webLinksAddon = new WebLinksAddon((_event, uri) => {
       if (window.electronAPI && window.electronAPI.openExternal) {
         window.electronAPI.openExternal(uri);
       } else {
@@ -49,7 +61,7 @@ export const TerminalBay = forwardRef(({ scriptId, initialLog, onInput, onClear 
     term.loadAddon(fitAddon);
     term.loadAddon(webLinksAddon);
     
-    term.open(containerRef.current);
+    term.open(containerRef.current!);
     fitAddon.fit();
 
     term.onData(data => {
@@ -59,7 +71,7 @@ export const TerminalBay = forwardRef(({ scriptId, initialLog, onInput, onClear 
     termRef.current = term;
 
     const resizeOb = new ResizeObserver(() => fitAddon.fit());
-    resizeOb.observe(containerRef.current);
+    resizeOb.observe(containerRef.current!);
 
     return () => {
       resizeOb.disconnect();
@@ -67,7 +79,6 @@ export const TerminalBay = forwardRef(({ scriptId, initialLog, onInput, onClear 
     };
   }, []);
 
-  // When scriptId switches, we populate it with the stored history
   useEffect(() => {
     if (termRef.current) {
       termRef.current.clear();
@@ -75,7 +86,7 @@ export const TerminalBay = forwardRef(({ scriptId, initialLog, onInput, onClear 
         termRef.current.write(initialLog);
       }
     }
-  }, [scriptId]);
+  }, [scriptId, initialLog]);
 
   return (
     <section className="panel terminal-bay">

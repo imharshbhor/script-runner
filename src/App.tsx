@@ -2,13 +2,15 @@ import { useState, useEffect, useRef } from "react";
 import { Sidebar } from "./components/Sidebar";
 import { ConfigBay } from "./components/ConfigBay";
 import { TerminalBay } from "./components/TerminalBay";
+import { LogBay } from "./components/LogBay";
 import { EmptyState } from "./components/EmptyState";
 import { Titlebar } from "./components/Titlebar";
 import { SearchPalette } from "./components/SearchPalette";
+import type { Script } from "./types";
 import "./styles.css";
 
-const initialScripts = [
-  { id: "s1", name: "List Directory contents", command: "ls", path: "C:\\", status: "idle", lastRun: "Never" }
+const defaultScripts: Script[] = [
+  { id: "s1", name: "List Directory contents", command: "dir", path: "C:\\", status: "idle", lastRun: "Never" }
 ];
 
 function formatTime() {
@@ -17,16 +19,63 @@ function formatTime() {
 }
 
 export default function App() {
-  const [scripts, setScripts] = useState(initialScripts);
-  const [activeId, setActiveId] = useState(null);
-  const logsRef = useRef({});
-  const terminalRef = useRef(null);
+  const [scripts, setScripts] = useState<Script[]>([]);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const logsRef = useRef<Record<string, string>>({});
+  const terminalRef = useRef<{ write: (data: string) => void; clearAndWrite: (data: string) => void } | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-  // Global search shortcut
+  const handleGetLogs = async (scriptName: string, scriptPath: string) => {
+    if (window.electronAPI) {
+      const result = await window.electronAPI.getScriptLogs(scriptName, scriptPath);
+      if (result.success) {
+        return result.files;
+      }
+    }
+    return [];
+  };
+
+  const handleOpenLog = (filepath: string) => {
+    if (window.electronAPI) {
+      window.electronAPI.openLogFile(filepath);
+    }
+  };
+
+  const handleDeleteLog = async (filepath: string) => {
+    if (window.electronAPI) {
+      await window.electronAPI.deleteLogFile(filepath);
+    }
+  };
+
+  // Load scripts on mount
   useEffect(() => {
-    const handleKeyDown = (e) => {
+    async function load() {
+      if (window.electronAPI) {
+        const result = await window.electronAPI.loadScripts();
+        if (result.success && result.scripts) {
+          setScripts(result.scripts.map(s => ({ ...s, status: 'idle' })));
+        } else if (result.success) {
+          setScripts(defaultScripts);
+        }
+      } else {
+        setScripts(defaultScripts);
+      }
+      setIsLoading(false);
+    }
+    load();
+  }, []);
+
+  // Auto-save when scripts change
+  useEffect(() => {
+    if (!isLoading && window.electronAPI && scripts.length > 0) {
+      window.electronAPI.saveScripts(scripts);
+    }
+  }, [scripts, isLoading]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
         e.preventDefault();
         setIsSearchOpen(prev => !prev);
@@ -36,8 +85,6 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Keep a ref to activeId so we can use it inside the electron callbacks
-  // without constantly re-subscribing.
   const activeIdRef = useRef(activeId);
   useEffect(() => { activeIdRef.current = activeId; }, [activeId]);
 
@@ -50,7 +97,7 @@ export default function App() {
         else if (type === 'warn') output = `\x1b[33m${msg}\x1b[0m`;
         else if (type === 'err') output = `\x1b[31m${msg}\x1b[0m`;
         else if (type === 'ok') output = `\r\n\x1b[32m${msg}\x1b[0m\r\n`;
-        else output = output.replace(/(?<!\r)\n/g, '\r\n'); // normalize newlines for xterm
+        else output = output.replace(/(?<!\r)\n/g, '\r\n');
 
         logsRef.current[id] = (logsRef.current[id] || "") + output;
 
@@ -81,7 +128,7 @@ export default function App() {
 
   const activeScript = scripts.find(s => s.id === activeId);
 
-  const handleToggleScript = (id) => {
+  const handleToggleScript = (id: string) => {
     const script = scripts.find(s => s.id === id);
     if (!script) return;
 
@@ -98,7 +145,8 @@ export default function App() {
         window.electronAPI.runScript({
           id,
           command: script.command,
-          cwd: script.path
+          cwd: script.path,
+          scriptName: script.name
         });
       }
     } else {
@@ -106,11 +154,11 @@ export default function App() {
     }
   };
 
-  const handleUpdateScript = (id, updates) => {
+  const handleUpdateScript = (id: string, updates: Partial<Script>) => {
     setScripts(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s));
   };
 
-  const handleDeleteScript = (id) => {
+  const handleDeleteScript = (id: string) => {
     if(window.electronAPI) window.electronAPI.stopScript(id);
     setScripts(prev => prev.filter(s => s.id !== id));
     delete logsRef.current[id];
@@ -130,16 +178,20 @@ export default function App() {
     setActiveId(newId);
   };
 
-  const handleClearLogs = (id) => {
+  const handleClearLogs = (id: string) => {
     logsRef.current[id] = "";
     if (id === activeId) terminalRef.current?.clearAndWrite("");
   };
 
-  const handleTerminalInput = (data) => {
+  const handleTerminalInput = (data: string) => {
     if (activeId && window.electronAPI) {
       window.electronAPI.sendScriptInput(activeId, data);
     }
   };
+
+  if (isLoading) {
+    return null;
+  }
 
   return (
     <div className="command-center">
@@ -179,6 +231,13 @@ export default function App() {
                 initialLog={logsRef.current[activeScript.id] || ""}
                 onClear={handleClearLogs}
                 onInput={handleTerminalInput}
+              />
+              <LogBay
+                scriptName={activeScript.name}
+                scriptPath={activeScript.path}
+                onGetLogs={handleGetLogs}
+                onOpenLog={handleOpenLog}
+                onDeleteLog={handleDeleteLog}
               />
             </main>
           ) : (

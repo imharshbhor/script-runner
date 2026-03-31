@@ -1,7 +1,14 @@
 import { Icon } from "./Icons";
+import type { Script } from "../types";
 
-export function ConfigBay({ script, onUpdate, onDelete }) {
-  const handleChange = (field, value) => {
+interface ConfigBayProps {
+  script: Script;
+  onUpdate: (id: string, updates: Partial<Script>) => void;
+  onDelete: (id: string) => void;
+}
+
+export function ConfigBay({ script, onUpdate, onDelete }: ConfigBayProps) {
+  const handleChange = (field: keyof Script, value: string) => {
     onUpdate(script.id, { [field]: value });
   };
 
@@ -30,7 +37,7 @@ export function ConfigBay({ script, onUpdate, onDelete }) {
           <Icon.Trash size={14} />
         </button>
       </header>
-      <div className="bay-content">
+      <div className="bay-content config-grid">
         <div className="form-group">
           <label className="label">Sequence Name</label>
           <input 
@@ -50,7 +57,7 @@ export function ConfigBay({ script, onUpdate, onDelete }) {
                onChange={(e) => handleChange('path', e.target.value)}
              />
              <button className="btn-secondary" onClick={selectDir}>Browse</button>
-          </div>
+           </div>
         </div>
         <div className="form-group full">
           <label className="label">Execution Command</label>

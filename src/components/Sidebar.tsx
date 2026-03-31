@@ -1,18 +1,23 @@
 import { Icon } from "./Icons";
 import { ScriptCard } from "./ScriptCard";
+import type { Script } from "../types";
 
-export function Sidebar({ scripts, activeId, onSelect, onToggle, onAdd, isCollapsed, onToggleSidebar }) {
+interface SidebarProps {
+  scripts: Script[];
+  activeId: string | null;
+  onSelect: (id: string) => void;
+  onToggle: (id: string) => void;
+  onAdd: () => void;
+  isCollapsed: boolean;
+  onToggleSidebar: () => void;
+}
+
+export function Sidebar({ scripts, activeId, onSelect, onToggle, onAdd, isCollapsed, onToggleSidebar }: SidebarProps) {
   const isAnyRunning = scripts.some(s => s.status === 'running');
 
   return (
     <aside className={`panel deck ${isCollapsed ? 'collapsed' : ''}`}>
       <header className="deck-header">
-        {/* {!isCollapsed && (
-          <div className="brand-title">
-            <span>ScriptRunner</span>
-            <div className={`system-status ${isAnyRunning ? '' : 'idle'}`}></div>
-          </div>
-        )} */}
         <button className="btn-add" onClick={onAdd} title="Deploy New Script">
           <Icon.Plus size={isCollapsed ? 18 : 16} />
         </button>

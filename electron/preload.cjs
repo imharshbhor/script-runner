@@ -10,6 +10,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
   stopScript: (id) => ipcRenderer.send("stop-script", id),
   sendScriptInput: (id, data) => ipcRenderer.send("script-input", { id, data }),
   openExternal: (url) => ipcRenderer.send("open-external", url),
+  saveScripts: (scripts) => ipcRenderer.invoke("save-scripts", scripts),
+  loadScripts: () => ipcRenderer.invoke("load-scripts"),
+  getScriptLogs: (scriptName, scriptPath) => ipcRenderer.invoke("get-script-logs", { scriptName, scriptPath }),
+  openLogFile: (filepath) => ipcRenderer.send("open-log-file", filepath),
+  deleteLogFile: (filepath) => ipcRenderer.invoke("delete-log-file", filepath),
   onLog: (callback) => {
     const handler = (_event, value) => callback(value);
     ipcRenderer.on("script-log", handler);

@@ -1,6 +1,10 @@
 import { Icon } from "./Icons";
 
-export function EmptyState({ onAdd }) {
+interface EmptyStateProps {
+  onAdd: () => void;
+}
+
+export function EmptyState({ onAdd }: EmptyStateProps) {
   return (
     <main className="empty-matrix">
       <div className="empty-content">

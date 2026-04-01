@@ -1,6 +1,15 @@
 import { Icon } from "./Icons";
+import type { Script } from "../types";
 
-export function ScriptCard({ script, isActive, onClick, onToggle, isCollapsed }) {
+interface ScriptCardProps {
+  script: Script;
+  isActive: boolean;
+  onClick: () => void;
+  onToggle: (id: string) => void;
+  isCollapsed: boolean;
+}
+
+export function ScriptCard({ script, isActive, onClick, onToggle, isCollapsed }: ScriptCardProps) {
   if (isCollapsed) {
     const initial = script.name.charAt(0).toUpperCase();
     return (

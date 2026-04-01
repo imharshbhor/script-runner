@@ -1,6 +1,11 @@
 import { Icon } from "./Icons";
 
-export function Titlebar({ onToggleSidebar, onOpenSearch }) {
+interface TitlebarProps {
+  onToggleSidebar: () => void;
+  onOpenSearch: () => void;
+}
+
+export function Titlebar({ onToggleSidebar, onOpenSearch }: TitlebarProps) {
   const minimize = () => window.electronAPI?.minimize();
   const maximize = () => window.electronAPI?.maximize();
   const close = () => window.electronAPI?.close();
@@ -11,7 +16,6 @@ export function Titlebar({ onToggleSidebar, onOpenSearch }) {
 
      <div className="titlebar-left"><p>ScriptRunner</p></div>
 
-      {/* Center Search bar */}
       <div className="titlebar-center">
         <div className="search-bar" onClick={onOpenSearch}>
           <Icon.Search size={14} />
@@ -20,7 +24,6 @@ export function Titlebar({ onToggleSidebar, onOpenSearch }) {
         </div>
       </div>
 
-      {/* Right Window controls */}
       <div className="titlebar-right">
         <button className="window-control minimize" onClick={minimize}>
           <svg viewBox="0 0 10 1" width="10" height="1"><rect fill="currentColor" width="10" height="1"></rect></svg>
